@@ -26,16 +26,40 @@ const playerMap = new Map();
 // Socket id -> Player token
 const socketMap = new Map();
 
+// Game index -> Socket id
+// Used to form opponent pairs
+const gameSocketMap = new Map();
+
+// Socket -> Socket
+// Maps a socket to its opponent's socket
+const opponentSocketMap = new Map();
+
 function generatePlayerToken() {
     return crypto.randomUUID();
 }
 
 function registerPlayer(token, gameIndex, player) {
-    playerMap.set(token, { index: gameIndex, player: player, joined: false }); // number instead of player?
+    playerMap.set(token, { index: gameIndex, player: player, joined: false, socketId: null }); // number instead of player?
 }
 
 function setPlayerJoinedStatus(token, joinedStatus) {
     playerMap.get(token).joined = joinedStatus;
+}
+
+function addSocketPair(socketA, socketB) {
+    opponentSocketMap.set(socketA, socketB);
+    opponentSocketMap.set(socketB, socketA);
+}
+
+function getSocketOpponent(socket) {
+    return opponentSocketMap.get(socket);
+}
+
+// This removes a socket and its pair
+function removeSocket(socket) {
+    const opponentId = getSocketOpponent(socket);
+    opponentSocketMap.delete(opponentId);
+    opponentSocketMap.delete(socket);
 }
 
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -106,11 +130,27 @@ io.on('connection', (socket) => {
         setPlayerJoinedStatus(token, true);
         socketMap.set(socket.id, token);
 
+        if (gameSocketMap.has(gameIndex)) {
+            addSocketPair(gameSocketMap.get(gameIndex), socket);
+            console.log(`Second one to join game, adding ${socket.id} to socket pair`);
+        } else {
+            gameSocketMap.set(gameIndex, socket);
+            console.log(`First one to join game, adding ${socket.id} to game-socket map`);
+        }
+
         io.to(gameIndex).emit("joinGame", playerData.player);
+
+        return ack({ success: true });
     });
 
-    socket.on('move', (moveData) => {
+    socket.on('moveCard', (index, x, y) => {
         // TODO: parse move made by player and maintain game state
+
+        // const playerData = playerMap.get(socketMap.get(socket.id));
+        // const gameIndex = playerData.index;
+        //console.log(`Index: ${index} | (${x}, ${y})`);
+
+        getSocketOpponent(socket).emit("moveCard", index, x, y);
     });
 
     socket.on('disconnect', () => {

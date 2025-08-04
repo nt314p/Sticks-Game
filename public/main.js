@@ -1,5 +1,3 @@
-const socket = io();
-
 // Allows the user to proceed to join the game by pressing
 // enter after entering the game id
 document.getElementById("gameIdInput").addEventListener("keydown", (event) => {
