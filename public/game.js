@@ -19,7 +19,6 @@ stage.add(moveLayer);
 // TODO: refine these events because they enable all objects to be draggable
 stage.on("pointerdown", (evt) => {
     const obj = evt.target;
-    console.log("down!");
 
     if (!obj || obj.getClassName() === "Stage") return;
 
@@ -30,7 +29,6 @@ stage.on("pointerdown", (evt) => {
 
 stage.on("pointerup", (evt) => {
     const obj = evt.target;
-    console.log("up!");
 
     if (!obj || obj.getClassName() === "Stage") return;
 
@@ -54,7 +52,7 @@ function cardIndexToFilename(cardIndex) {
         name = royals[cardValue - 11];
     }
 
-    return `${name}_of_${suit}.png`;
+    return `${name}_of_${suit}.svg`;
 }
 
 let cards = [];
@@ -89,6 +87,8 @@ function loadCard(cardIndex) {
 
         card.perfectDrawEnabled(false);
 
+        //card.cache();
+
         mainLayer.add(card);
         cards[cardIndex] = card;
     };
@@ -108,9 +108,9 @@ socket.emit("joinGame", token, (res) => {
 });
 
 function log(message) {
-    const text = document.createElement("p");
-    text.innerText = message;
-    document.getElementById("gameLog").append(text);
+    // const text = document.createElement("p");
+    // text.innerText = message;
+    // document.getElementById("gameLog").append(text);
 }
 
 socket.on("joinGame", (playerNumber) => {
@@ -124,5 +124,10 @@ socket.on("leaveGame", (playerNumber) => {
 });
 
 socket.on("moveCard", (index, x, y) => {
-    cards[index].position({ x: x, y: y });
+    // TODO: scaling
+    const card = cards[index];
+    card.moveTo(moveLayer);
+    card.moveToTop();
+    card.position({ x: x, y: y }); 
+    card.moveTo(mainLayer); // TODO: is this optimal layer manipulation?
 });

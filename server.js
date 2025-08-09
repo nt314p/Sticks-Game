@@ -1,17 +1,17 @@
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 import express from "express";
 import bodyParser from "body-parser";
+import compression from 'compression';
 import http from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { idToIndex, indexToId, getRandomIdIndex } from "./friendlyids.js";
 import { SticksGame } from "./sticksGame.js";
 import crypto from "crypto";
 import "dotenv/config";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -64,6 +64,7 @@ function removeSocket(socket) {
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
+app.use(compression());
 
 app.post('/', (req, res) => {
     if (req.body && req.body.game) {
@@ -150,7 +151,11 @@ io.on('connection', (socket) => {
         // const gameIndex = playerData.index;
         //console.log(`Index: ${index} | (${x}, ${y})`);
 
-        getSocketOpponent(socket).emit("moveCard", index, x, y);
+        const opponentSocket = getSocketOpponent(socket);
+
+        if (opponentSocket) {
+            opponentSocket.emit("moveCard", index, x, y);
+        }
     });
 
     socket.on('disconnect', () => {
@@ -172,6 +177,17 @@ io.on('connection', (socket) => {
         io.to(gameIndex).emit("leaveGame", playerData.player);
 
         setPlayerJoinedStatus(token, false);
+
+        if (opponentSocketMap.has(socket)) { 
+            // Both players were connected before disconnect
+
+            // Set game-socket map to the remaining connected player
+            gameSocketMap.set(gameIndex, getSocketOpponent(socket));
+            removeSocket(socket); // Remove the pairing
+        } else {
+            // Only one player was connected before disconnect
+            gameSocketMap.delete(gameIndex);
+        }
 
         socketMap.delete(socket.id);
         // TODO: delete(?) from playerMap
