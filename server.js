@@ -144,7 +144,7 @@ io.on('connection', (socket) => {
         return ack({ success: true });
     });
 
-    socket.on('moveCard', (index, x, y) => {
+    socket.on("moveCard", (index, x, y) => {
         // TODO: parse move made by player and maintain game state
 
         // const playerData = playerMap.get(socketMap.get(socket.id));
@@ -158,7 +158,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('disconnect', () => {
+    socket.on("moveCursor", (x, y) => {
+        const opponentSocket = getSocketOpponent(socket);
+
+        if (opponentSocket) {
+            opponentSocket.emit("moveCursor", x, y);
+        }
+    });
+
+    socket.on("disconnect", () => {
         console.log(`Client disconnected (${socket.id})`);
 
         const token = socketMap.get(socket.id);
@@ -178,7 +186,7 @@ io.on('connection', (socket) => {
 
         setPlayerJoinedStatus(token, false);
 
-        if (opponentSocketMap.has(socket)) { 
+        if (opponentSocketMap.has(socket)) {
             // Both players were connected before disconnect
 
             // Set game-socket map to the remaining connected player
