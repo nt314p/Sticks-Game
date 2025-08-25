@@ -2,7 +2,7 @@ const socket = io();
 
 const token = window.localStorage.getItem("token");
 
-//Konva.pixelRatio = 1.5;
+Konva.pixelRatio = 2;
 
 const stage = new Konva.Stage({
     container: 'container',
@@ -236,4 +236,23 @@ socket.on("moveCard", (index, x, y) => {
 socket.on("moveCursor", (x, y) => {
     opponentMouse.position({ x: x, y: y });
     opponentMouse.moveToTop();
+});
+
+// ID: numerical id
+// type: "card" or "stick"
+// data: card kind (0 - 51) or stick message (string)
+socket.on("add", (id, type, data) => {
+
+});
+
+socket.on("modify", (id, hidden) => {
+
+});
+
+socket.on("move", (id, x, y) => {
+
+});
+
+socket.on("delete", (id) => {
+
 });
